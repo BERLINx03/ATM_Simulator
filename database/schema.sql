@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS users (
                                      id INTEGER PRIMARY KEY,
+                                     name TEXT NOT NULL,               -- New column for user name
                                      card_number TEXT NOT NULL UNIQUE,
                                      hashed_pin TEXT NOT NULL
 );
