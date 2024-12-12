@@ -23,6 +23,7 @@ ATM-Simulator/
 │   │   │   ├── DatabaseManager.java
 │   │   │   ├── Logger.java
 │   │   │   ├── SecurityUtils.java
+|   |   |   ├── SessionManager.java
 │   │   ├── tests/
 │   │   │   ├── ConcurrencyTest.java
 ├── database/
