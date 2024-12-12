@@ -11,6 +11,9 @@ public class AccountService {
     // Use ReentrantLock for thread-safe operations
     private final ReentrantLock lock = new ReentrantLock();
 
+    private int userId;
+    private int accountId;
+
     public AccountService(DatabaseManager dbManager, Logger logger, SecurityUtils securityUtils) {
         this.dbManager = dbManager;
         this.logger = logger;
@@ -20,8 +23,13 @@ public class AccountService {
     public boolean login(String cardNumber, String pin) {
         try {
             String hashedPin = securityUtils.hashPin(pin);
-            boolean isValid = dbManager.validateCredentials(cardNumber, hashedPin);
+            boolean isValid = dbManager.validateCard(cardNumber, hashedPin);
             logger.log(isValid ? "Login successful" : "Login failed", cardNumber);
+            if (isValid) {
+                // TODO: You need to add a method to retrieve userId and accountId
+                // this.userId = dbManager.getUserId(cardNumber);
+                // this.accountId = dbManager.getAccountId(cardNumber);
+            }
             return isValid;
         } catch (Exception e) {
             logger.logError("Login error", e);
@@ -32,9 +40,9 @@ public class AccountService {
     public BigDecimal getBalance(String cardNumber) {
         try {
             lock.lock();
-            BigDecimal balance = dbManager.getBalance(cardNumber);
+            double balance = dbManager.viewBalance(userId);
             logger.log("Balance inquiry", cardNumber);
-            return balance;
+            return BigDecimal.valueOf(balance);
         } finally {
             lock.unlock();
         }
@@ -43,14 +51,7 @@ public class AccountService {
     public boolean withdraw(String cardNumber, BigDecimal amount) {
         try {
             lock.lock();
-            BigDecimal currentBalance = dbManager.getBalance(cardNumber);
-            
-            if (currentBalance.compareTo(amount) < 0) {
-                logger.log("Insufficient funds", cardNumber);
-                return false;
-            }
-
-            boolean success = dbManager.updateBalance(cardNumber, currentBalance.subtract(amount));
+            boolean success = dbManager.withdrawMoney(userId, amount.doubleValue(), accountId);
             if (success) {
                 logger.log("Withdrawal successful", cardNumber);
             }
@@ -63,8 +64,7 @@ public class AccountService {
     public boolean deposit(String cardNumber, BigDecimal amount) {
         try {
             lock.lock();
-            BigDecimal currentBalance = dbManager.getBalance(cardNumber);
-            boolean success = dbManager.updateBalance(cardNumber, currentBalance.add(amount));
+            boolean success = dbManager.depositMoney(userId, amount.doubleValue(), accountId);
             if (success) {
                 logger.log("Deposit successful", cardNumber);
             }
@@ -77,15 +77,10 @@ public class AccountService {
     public boolean transfer(String fromCard, String toCard, BigDecimal amount) {
         try {
             lock.lock();
-            // First check if sender has sufficient funds
-            BigDecimal senderBalance = dbManager.getBalance(fromCard);
-            if (senderBalance.compareTo(amount) < 0) {
-                logger.log("Transfer failed - insufficient funds", fromCard);
-                return false;
-            }
-
-            // Perform the transfer
-            boolean success = dbManager.transfer(fromCard, toCard, amount);
+            // TODO: You need to add a method to get userId from card number
+            // int toUserId = dbManager.getUserId(toCard);
+            
+            boolean success = dbManager.transferMoney(userId, toUserId, amount.doubleValue());
             if (success) {
                 logger.log("Transfer successful", fromCard);
             }
@@ -93,5 +88,10 @@ public class AccountService {
         } finally {
             lock.unlock();
         }
+    }
+
+    // New method to get transaction history
+    public List<String> getTransactionHistory() {
+        return dbManager.getTransactionHistory(userId);
     }
 }
