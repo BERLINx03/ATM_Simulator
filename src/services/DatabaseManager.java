@@ -33,12 +33,10 @@ public class DatabaseManager {
                 ResultSet userKeys = userStmt.getGeneratedKeys();
                 if (userKeys.next()) {
                     int userId = userKeys.getInt(1);
-
                     // Insert account
                     accountStmt.setInt(1, userId);
                     accountStmt.setDouble(2, balance);
                     accountStmt.executeUpdate();
-
                     conn.commit(); // Commit the transaction
                     return cardNumber; // Return the generated card number
                 } else {
@@ -56,27 +54,24 @@ public class DatabaseManager {
         return null;
     }
 
-
-    public static boolean validateCard(String cardNumber, String hashedPin) {
-
-        String sql = "SELECT * FROM users WHERE card_number = ? AND hashed_pin = ?";
+    public static int login(String cardNumber, String hashedPin) {
+        String sql = "SELECT id FROM users WHERE card_number = ? AND hashed_pin = ?";
 
         try (
                 Connection connection = getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)
         ) {
-            /**
-             * sets the value of the first placeholder(bind variable - '?') to the string sent next
-             * */
             statement.setString(1, cardNumber);
             statement.setString(2, hashedPin);
-
             ResultSet resultSet = statement.executeQuery();
-
-            return resultSet.next();
+            if (resultSet.next()) {
+                return resultSet.getInt("id");
+            } else {
+                return -1;
+            }
         } catch (SQLException e) {
             System.err.println("Error while validating the card: " + e.getMessage());
-            return false;
+            return -1;
         }
     }
 
@@ -87,12 +82,10 @@ public class DatabaseManager {
         }
 
         String checkUserQuery = "SELECT COUNT(*) FROM accounts WHERE user_id = ?";
-
         try (
                 Connection conn = getConnection();
                 PreparedStatement checkUserExistance = conn.prepareStatement(checkUserQuery);
         ) {
-
             checkUserExistance.setInt(1, userId);
 
             ResultSet rs = checkUserExistance.executeQuery();
@@ -253,26 +246,6 @@ public class DatabaseManager {
         return -1;
     }
 
-    public boolean updateBalance(String cardNumber, double newBalance) {
-        String query = "UPDATE accounts SET balance = ? " +
-                "WHERE user_id = (SELECT id FROM users WHERE card_number = ?)";
-
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(query)) {
-
-            stmt.setDouble(1, newBalance);
-            stmt.setString(2, cardNumber);
-
-            int rowsAffected = stmt.executeUpdate();
-            return rowsAffected > 0;
-
-        } catch (SQLException e) {
-            System.err.println("Error while updating balance: " + e.getMessage());
-        }
-
-        return false;
-    }
-
     public boolean logTransaction(int accountId, String type, double amount) {
         String insertTransactionQuery = "INSERT INTO transactions (account_id, type, amount) VALUES (?, ?, ?)";
 
@@ -345,6 +318,7 @@ public class DatabaseManager {
         }
         return cardNumber;
     }
+
     private String generateRandomCardNumber() {
         StringBuilder cardNumber = new StringBuilder();
 

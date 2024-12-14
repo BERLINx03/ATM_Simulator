@@ -4,6 +4,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 public class SecurityUtils {
+
     public static String hashPin(String pin) {
         if (pin == null || pin.isEmpty()) {
             throw new IllegalArgumentException("PIN cannot be null or empty");
