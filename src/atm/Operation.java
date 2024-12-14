@@ -8,5 +8,6 @@ public enum Operation {
     WITHDRAW,
     TRANSFER,
     GET_BALANCE,
-    VIEW_OPERATION
+    VIEW_OPERATION,
+    SIGNUP
 }

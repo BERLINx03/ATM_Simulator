@@ -20,6 +20,11 @@ public class ATM implements Runnable {
                 case IDLE: {
                     System.out.println("Welcome to ATM Simulator, waiting .......");
                 }
+                case SIGNUP: {
+                    String cardNumber = accountService.createUser("","",3.3);
+                    // MessageBox el card
+                    // button to login
+                }
                 case LOGIN: {
                     accountService.login("ATM", "ATM");
                     currentOperation = Operation.VIEW_OPERATION;

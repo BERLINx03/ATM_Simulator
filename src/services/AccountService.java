@@ -13,6 +13,11 @@ public class AccountService {
         this.database = DatabaseManager.getInstance();
     }
 
+    public String createUser(String name, String pin, double balance) {
+        String hashedPin = SecurityUtils.hashPin(pin);
+        String cardNumber = database.createUser(name, hashedPin, balance);
+        return cardNumber;
+    }
     public boolean login(String cardNumber, String pin) {
 
         String hashedPin = SecurityUtils.hashPin(pin);
