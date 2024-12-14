@@ -64,6 +64,27 @@ public class DatabaseManager {
         return null;
     }
 
+    public int getUserId(String cardNumber) {
+        if (cardNumber == null || cardNumber.isEmpty()) {
+            throw new IllegalArgumentException("Card number cannot be null or empty.");
+        }
+        String userIdQuery = "SELECT id FROM users WHERE card_number = ?";
+        try (
+                Connection conn = getConnection();
+                PreparedStatement stmt = conn.prepareStatement(userIdQuery);
+        ) {
+            stmt.setString(1,cardNumber);
+            try (ResultSet rs = stmt.executeQuery()){
+                if (rs.next()){
+                    return rs.getInt("id");
+                }
+            }
+        } catch (SQLException e){
+            System.err.println("Error while retrieving user ID: " + e.getMessage());
+        }
+        return -1;
+    }
+
     public int getAccountId(int userId) throws SQLException {
         String accountIdQuery = "SELECT id FROM accounts WHERE user_id = ?";
         try (
@@ -81,6 +102,7 @@ public class DatabaseManager {
         }
         return -1;
     }
+
     public int login(String cardNumber, String hashedPin) {
         String sql = "SELECT id FROM users WHERE card_number = ? AND hashed_pin = ?";
         try (
@@ -251,17 +273,14 @@ public class DatabaseManager {
 
     }
 
-    public double getBalance(String cardNumber) {
-        String query = "SELECT a.balance FROM accounts a " +
-                "JOIN users u ON a.user_id = u.id " +
-                "WHERE u.card_number = ?";
+    public double getBalance(int userId) {
+        String query = "SELECT balance FROM accounts WHERE user_id = ?";
 
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
 
-            stmt.setString(1, cardNumber);
+            stmt.setInt(1, userId);
             ResultSet rs = stmt.executeQuery();
-
             if (rs.next()) {
                 return rs.getDouble("balance");
             }
@@ -271,6 +290,7 @@ public class DatabaseManager {
 
         return -1;
     }
+
 
     public boolean logTransaction(int accountId, String type, double amount) {
         String insertTransactionQuery = "INSERT INTO transactions (account_id, type, amount) VALUES (?, ?, ?)";
