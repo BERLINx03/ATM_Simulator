@@ -16,7 +16,7 @@ public class DatabaseManager {
         }
         return instance;
     }
-    private static final String DB_URL = "jdbc:sqlite:database/atm_simulator.db";
+    private static final String DB_URL = "jdbc:sqlite:B:/Development/DSA/ATM_Simulator/database/atm_simulator.db";
 
     private static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(DB_URL);
@@ -344,7 +344,7 @@ public class DatabaseManager {
         String cardNumber = null;
         boolean isUnique = false;
 
-        String checkDuplicateSql = "SELECT COUNT(*) FROM accounts WHERE card_number = ?";
+        String checkDuplicateSql = "SELECT COUNT(*) FROM users WHERE card_number = ?";
 
         try (Connection conn = getConnection()) {
             while (!isUnique) {
@@ -352,7 +352,6 @@ public class DatabaseManager {
                 try (PreparedStatement stmt = conn.prepareStatement(checkDuplicateSql)) {
                     stmt.setString(1, cardNumber);
                     try (ResultSet rs = stmt.executeQuery()) {
-                        // get the first column current row
                         if (rs.next() && rs.getInt(1) == 0) {
                             isUnique = true;
                         }
