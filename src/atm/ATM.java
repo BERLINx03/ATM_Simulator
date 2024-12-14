@@ -1,4 +1,9 @@
 package atm;
 
-public class ATM {
+public class ATM implements Runnable {
+
+    @Override
+    public void run() {
+
+    }
 }

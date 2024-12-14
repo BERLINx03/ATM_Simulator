@@ -11,33 +11,51 @@ public class DatabaseManager {
     private static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(DB_URL);
     }
-    public boolean createUser(String name, String hashedPin) {
-        if (hashedPin == null || hashedPin.isEmpty()) {
-            throw new IllegalArgumentException("Hashed pin cannot be null or empty.");
-        }
 
+    public String createUser(String name, String hashedPin, double balance) {
+        String insertUserQuery = "INSERT INTO users (name, card_number, hashed_pin) VALUES (?, ?, ?)";
+        String insertAccountQuery = "INSERT INTO accounts (user_id, balance) VALUES (?, ?)";
         String cardNumber = generateUniqueCardNumber();
-        String insertUserSql = "INSERT INTO users (card_number, hashed_pin, name) VALUES (?, ?)";
 
-        try (
-                Connection connection = getConnection();
-                PreparedStatement stmt = connection.prepareStatement(insertUserSql)
-        ) {
-            stmt.setString(1,cardNumber);
-            stmt.setString(2,hashedPin);
-            stmt.setString(3,name);
-            int rowAffected = stmt.executeUpdate();
-            if(rowAffected > 0){
-                System.out.println("User with card number:" + cardNumber + " has been created.");
-                return true;
-            }else {
-                System.out.println(name + " has not been created.");
+        try (Connection conn = getConnection()) {
+            conn.setAutoCommit(false); // Start a transaction
+
+            try (PreparedStatement userStmt = conn.prepareStatement(insertUserQuery, Statement.RETURN_GENERATED_KEYS);
+                 PreparedStatement accountStmt = conn.prepareStatement(insertAccountQuery)) {
+
+                // Insert user
+                userStmt.setString(1, name);
+                userStmt.setString(2, cardNumber);
+                userStmt.setString(3, hashedPin);
+                userStmt.executeUpdate();
+
+                // Retrieve generated user ID
+                ResultSet userKeys = userStmt.getGeneratedKeys();
+                if (userKeys.next()) {
+                    int userId = userKeys.getInt(1);
+
+                    // Insert account
+                    accountStmt.setInt(1, userId);
+                    accountStmt.setDouble(2, balance);
+                    accountStmt.executeUpdate();
+
+                    conn.commit(); // Commit the transaction
+                    return cardNumber; // Return the generated card number
+                } else {
+                    conn.rollback();
+                    System.err.println("Failed to retrieve generated user ID.");
+                }
+            } catch (SQLException e) {
+                conn.rollback();
+                throw e;
             }
         } catch (SQLException e) {
-            System.err.println("Error while creating user: " + e.getMessage());
+            System.err.println("Error while creating user and account: " + e.getMessage());
         }
-        return false;
+
+        return null;
     }
+
 
     public static boolean validateCard(String cardNumber, String hashedPin) {
 
@@ -69,6 +87,7 @@ public class DatabaseManager {
         }
 
         String checkUserQuery = "SELECT COUNT(*) FROM accounts WHERE user_id = ?";
+
         try (
                 Connection conn = getConnection();
                 PreparedStatement checkUserExistance = conn.prepareStatement(checkUserQuery);
@@ -153,9 +172,9 @@ public class DatabaseManager {
         if (amount <= 0) {
             throw new IllegalArgumentException("Transfer amount must be positive.");
         }
-        String checkBalanceQuery = "SELECT balance FROM accounts WHERE user_id = ? FOR UPDATE";
+        String checkBalanceQuery = "SELECT balance FROM accounts WHERE user_id = ?";
         String updateBalanceQuery = "UPDATE accounts SET balance = balance + ? WHERE user_id = ?";
-        String checkRecipientQuery = "SELECT 1 FROM accounts WHERE user_id = ? FOR UPDATE";
+        String checkRecipientQuery = "SELECT 1 FROM accounts WHERE user_id = ?";
         /**
          * a transaction is a sequence of operations that are executed as a single unit.
          * It ensures that either all operations within the transaction are successfully completed (committed),
@@ -213,23 +232,45 @@ public class DatabaseManager {
 
     }
 
-    public double viewBalance(int userId) {
-        double balance = -1;
-        String viewBalanceQuery = "SELECT balance FROM accounts WHERE user_id = ?";
-        try(Connection conn = getConnection();
-            PreparedStatement stmt = conn.prepareStatement(viewBalanceQuery)){
+    public double getBalance(String cardNumber) {
+        String query = "SELECT a.balance FROM accounts a " +
+                "JOIN users u ON a.user_id = u.id " +
+                "WHERE u.card_number = ?";
 
-            stmt.setInt(1, userId);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    balance = rs.getDouble("balance");
-                }
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setString(1, cardNumber);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return rs.getDouble("balance");
             }
-
-        } catch (SQLException e){
-            System.err.println("Error while viewing balance: " + e.getMessage());
+        } catch (SQLException e) {
+            System.err.println("Error while retrieving balance: " + e.getMessage());
         }
-        return balance;
+
+        return -1;
+    }
+
+    public boolean updateBalance(String cardNumber, double newBalance) {
+        String query = "UPDATE accounts SET balance = ? " +
+                "WHERE user_id = (SELECT id FROM users WHERE card_number = ?)";
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query)) {
+
+            stmt.setDouble(1, newBalance);
+            stmt.setString(2, cardNumber);
+
+            int rowsAffected = stmt.executeUpdate();
+            return rowsAffected > 0;
+
+        } catch (SQLException e) {
+            System.err.println("Error while updating balance: " + e.getMessage());
+        }
+
+        return false;
     }
 
     public boolean logTransaction(int accountId, String type, double amount) {

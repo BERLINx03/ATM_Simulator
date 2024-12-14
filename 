@@ -1,0 +1,14 @@
+* [33mcf44755[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m Update README.md
+*   [33m6477f5d[m Merge pull request #1 from BERLINx03/DatabaseManager
+[32m|[m[33m\[m  
+[32m|[m * [33mdfd899d[m[33m ([m[1;31morigin/DatabaseManager[m[33m, [m[1;32mDatabaseManager[m[33m)[m database manager completed
+[32m|[m * [33m530c09f[m connect DB, validate cards and deposit
+[32m|[m[32m/[m  
+[32m|[m * [33m4aab5f0[m[33m ([m[1;35mrefs/stash[m[33m)[m On main: Stash atm_simulator.db
+[32m|[m[32m/[m[35m|[m 
+[32m|[m * [33m530ea30[m index on main: 7905d54 set up for the atm project
+[32m|[m[32m/[m  
+[32m|[m * [33me6c9eb3[m[33m ([m[1;31morigin/abdallahali[m[33m)[m Update ATM.java
+[32m|[m * [33m702930c[m Update AccountService.java
+[32m|[m[32m/[m  
+* [33m7905d54[m set up for the atm project

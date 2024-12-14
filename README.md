@@ -21,9 +21,7 @@ ATM-Simulator/
 │   │   ├── services/
 │   │   │   ├── AccountService.java
 │   │   │   ├── DatabaseManager.java
-│   │   │   ├── Logger.java
 │   │   │   ├── SecurityUtils.java
-|   |   |   ├── SessionManager.java
 │   │   ├── tests/
 │   │   │   ├── ConcurrencyTest.java
 ├── database/
