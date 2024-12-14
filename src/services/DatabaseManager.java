@@ -64,7 +64,24 @@ public class DatabaseManager {
         return null;
     }
 
-    public static int login(String cardNumber, String hashedPin) {
+    public int getAccountId(int userId) throws SQLException {
+        String accountIdQuery = "SELECT id FROM accounts WHERE user_id = ?";
+        try (
+                Connection conn = getConnection();
+                PreparedStatement stmt = conn.prepareStatement(accountIdQuery);
+        ) {
+            stmt.setInt(1,userId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("id");
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error while retrieving account ID: " + e.getMessage());
+        }
+        return -1;
+    }
+    public int login(String cardNumber, String hashedPin) {
         String sql = "SELECT id FROM users WHERE card_number = ? AND hashed_pin = ?";
         try (
                 Connection connection = getConnection();
@@ -99,7 +116,7 @@ public class DatabaseManager {
 
             ResultSet rs = checkUserExistance.executeQuery();
             if (rs.next() && rs.getInt(1) == 0) {
-                System.err.println("User:" + userId + " doesn't exists.");
+                System.err.println("UserLocker:" + userId + " doesn't exists.");
                 return false;
             }
         } catch (SQLException e) {
@@ -146,11 +163,11 @@ public class DatabaseManager {
                 if(rs.next()){
                     double currentBalance = rs.getDouble("balance");
                     if( currentBalance < amount){
-                        System.err.println("User:" + userId + " doesn't have enough money.");
+                        System.err.println("UserLocker:" + userId + " doesn't have enough money.");
                         return false;
                     }
                 } else {
-                    System.err.println("User:" + userId + " not found.");
+                    System.err.println("UserLocker:" + userId + " not found.");
                     return false;
                 }
             }
@@ -160,7 +177,7 @@ public class DatabaseManager {
             int rowAffected = updateBalanceStmt.executeUpdate();
             if(rowAffected > 0){
                 logTransaction(accountId,"withdraw", amount);
-                System.out.println("User:" + userId + " has withdrew " + amount + "$.");
+                System.out.println("UserLocker:" + userId + " has withdrew " + amount + "$.");
                 return true;
             }
 
@@ -195,10 +212,10 @@ public class DatabaseManager {
                     if(rs.next()){
                         double currentBalance = rs.getDouble("balance");
                         if(currentBalance < amount){
-                            throw new SQLException("User:" + fromUserId + " doesn't have enough money.");
+                            throw new SQLException("UserLocker:" + fromUserId + " doesn't have enough money.");
                         }
                     } else {
-                        throw new SQLException("User:" + fromUserId + " not found.");
+                        throw new SQLException("UserLocker:" + fromUserId + " not found.");
                     }
                 }
 
