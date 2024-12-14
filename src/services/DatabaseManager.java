@@ -6,6 +6,16 @@ import java.util.List;
 
 public class DatabaseManager {
 
+    private static DatabaseManager instance;
+    private DatabaseManager() {
+    }
+
+    public static synchronized DatabaseManager getInstance() {
+        if (instance == null) {
+            instance = new DatabaseManager();
+        }
+        return instance;
+    }
     private static final String DB_URL = "jdbc:sqlite:database/atm_simulator.db";
 
     private static Connection getConnection() throws SQLException {
@@ -56,7 +66,6 @@ public class DatabaseManager {
 
     public static int login(String cardNumber, String hashedPin) {
         String sql = "SELECT id FROM users WHERE card_number = ? AND hashed_pin = ?";
-
         try (
                 Connection connection = getConnection();
                 PreparedStatement statement = connection.prepareStatement(sql)
