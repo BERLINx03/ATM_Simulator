@@ -7,7 +7,7 @@ import java.sql.SQLException;
 public class ATM implements Runnable {
 
     AccountService accountService;
-    Operation currentOperation;
+    Operation currentOperation = Operation.LOGIN;
 
     public ATM(AccountService accountService) {
         this.accountService = accountService;
@@ -17,9 +17,6 @@ public class ATM implements Runnable {
 
         while (true) {
             switch (currentOperation) {
-                case IDLE: {
-                    System.out.println("Welcome to ATM Simulator, waiting .......");
-                }
                 case SIGNUP: {
                     String cardNumber = accountService.createUser("","",3.3);
                     // MessageBox el card
