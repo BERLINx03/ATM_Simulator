@@ -7,7 +7,7 @@ import java.sql.SQLException;
 public class AccountService {
 
     private final DatabaseManager database;
-    UserLocker lock;
+    private UserLocker lock;
 
     public AccountService() {
         this.database = DatabaseManager.getInstance();
@@ -26,15 +26,18 @@ public class AccountService {
     }
 
     public boolean deposit(int userId, double amount) throws SQLException {
-        lock(lock){
+
+        if (lock == null) {
+            throw new IllegalStateException("User is not logged in or lock is not initialized.");
+        }
+
+        synchronized (lock) {
             int accountId = database.getAccountId(userId);
             if (accountId == -1) {
-                return false;
+                return false; // Account not found
             }
-
-            database.depositMoney(userId, amount, accountId);
+            return database.depositMoney(userId, amount, accountId);
         }
-        return true;
     }
     //login
     //withdraw
